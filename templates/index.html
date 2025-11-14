@@ -1,0 +1,740 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>5G RAN Resource Allocation - Interactive Demo</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: white;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .subtitle {
+            text-align: center;
+            color: #f0f0f0;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        .solution-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .solution-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid #667eea;
+        }
+        .solution-title {
+            font-size: 1.8em;
+            color: #667eea;
+            font-weight: bold;
+        }
+        .solution-description {
+            color: #666;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        .controls {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .control-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #555;
+        }
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+        }
+        .value-display {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .metric-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .metric-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 8px;
+        }
+        .metric-value {
+            font-size: 2em;
+            font-weight: bold;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 20px;
+        }
+        .comparison-note {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .improvement {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #667eea;
+        }
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            color: #667eea;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        .loading.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 5G RAN Resource Allocation Demo</h1>
+        <p class="subtitle">Interactive Demonstration of QoS-Aware Scheduling Solutions</p>
+
+        <!-- Solution 1: Delay-Aware Scheduling -->
+        <div class="solution-card">
+            <div class="solution-header">
+                <div class="solution-title">Solution 1: Delay-Aware Scheduling (DAS)</div>
+            </div>
+            <div class="solution-description">
+                This solution balances delay-critical URLLC traffic with fairness using a tunable parameter β. 
+                When β=0, it behaves like traditional Proportional Fair scheduling. When β=1, it prioritizes delay-sensitive traffic.
+            </div>
+            
+            <div class="controls">
+                <div class="control-group">
+                    <label>
+                        Trade-off Parameter (β): <span class="value-display" id="beta-value">0.7</span>
+                    </label>
+                    <input type="range" id="beta-slider" min="0" max="1" step="0.1" value="0.7">
+                    <p style="font-size: 0.9em; color: #666; margin-top: 5px;">
+                        β=0: Pure Proportional Fair (baseline) | β=1: Pure Delay-Aware
+                    </p>
+                </div>
+                <button onclick="runDasSimulation()">Run Simulation</button>
+            </div>
+
+            <div class="loading" id="das-loading">Running simulation...</div>
+
+            <div class="metrics" id="das-metrics" style="display: none;">
+                <div class="metric-card">
+                    <div class="metric-label">URLLC Timeout Rate</div>
+                    <div class="metric-value" id="das-timeout">-</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Avg URLLC Delay (ms)</div>
+                    <div class="metric-value" id="das-delay">-</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Avg Throughput</div>
+                    <div class="metric-value" id="das-throughput">-</div>
+                </div>
+            </div>
+
+            <div class="comparison-note" id="das-comparison" style="display: none;">
+                <strong>📊 Comparison vs Baseline (β=0):</strong>
+                <div id="das-improvement"></div>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="das-chart"></canvas>
+            </div>
+        </div>
+
+        <!-- Solution 2: CSI Smoothing -->
+        <div class="solution-card">
+            <div class="solution-header">
+                <div class="solution-title">Solution 2: Opportunistic Scheduling with CSI Smoothing</div>
+            </div>
+            <div class="solution-description">
+                Uses EWMA filtering to smooth noisy Channel State Information. Higher α values make the system more responsive 
+                to recent measurements, while lower values provide more stability.
+            </div>
+            
+            <div class="controls">
+                <div class="control-group">
+                    <label>
+                        Smoothing Factor (α): <span class="value-display" id="alpha-value">0.2</span>
+                    </label>
+                    <input type="range" id="alpha-slider" min="0.05" max="0.5" step="0.05" value="0.2">
+                    <p style="font-size: 0.9em; color: #666; margin-top: 5px;">
+                        α≈0: Maximum smoothing | α≈0.5: Minimal smoothing (like raw CSI)
+                    </p>
+                </div>
+                <button onclick="runCsiSimulation()">Run Simulation</button>
+            </div>
+
+            <div class="loading" id="csi-loading">Running simulation...</div>
+
+            <div class="metrics" id="csi-metrics" style="display: none;">
+                <div class="metric-card">
+                    <div class="metric-label">Spectral Efficiency</div>
+                    <div class="metric-value" id="csi-efficiency">-</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Retransmission Rate (%)</div>
+                    <div class="metric-value" id="csi-retrans">-</div>
+                </div>
+            </div>
+
+            <div class="comparison-note" id="csi-comparison" style="display: none;">
+                <strong>📊 Performance Analysis:</strong>
+                <div id="csi-improvement"></div>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="csi-chart"></canvas>
+            </div>
+        </div>
+
+        <!-- Solution 3: Fragmentation-Aware Scheduling -->
+        <div class="solution-card">
+            <div class="solution-header">
+                <div class="solution-title">Solution 3: Hierarchical Fragmentation-Aware Scheduling</div>
+            </div>
+            <div class="solution-description">
+                Manages non-contiguous spectrum fragments efficiently. With clustering enabled, fragments are grouped 
+                for optimized allocation. Without clustering, fragments are treated independently (traditional approach).
+            </div>
+            
+            <div class="controls">
+                <div class="control-group">
+                    <label style="display: flex; align-items: center; justify-content: space-between;">
+                        <span>Fragment Clustering:</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="clustering-toggle" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </label>
+                    <p style="font-size: 0.9em; color: #666; margin-top: 10px;">
+                        OFF: Traditional per-fragment allocation | ON: Clustered optimization
+                    </p>
+                </div>
+                <button onclick="runFragmentationSimulation()">Run Simulation</button>
+            </div>
+
+            <div class="loading" id="frag-loading">Running simulation...</div>
+
+            <div class="metrics" id="frag-metrics" style="display: none;">
+                <div class="metric-card">
+                    <div class="metric-label">Spectrum Utilization (%)</div>
+                    <div class="metric-value" id="frag-util">-</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Avg Throughput</div>
+                    <div class="metric-value" id="frag-throughput">-</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">URLLC Compliance (%)</div>
+                    <div class="metric-value" id="frag-compliance">-</div>
+                </div>
+            </div>
+
+            <div class="comparison-note" id="frag-comparison" style="display: none;">
+                <strong>📊 Improvement with Clustering:</strong>
+                <div id="frag-improvement"></div>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="frag-chart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let dasChart, csiChart, fragChart;
+        let baselineResults = null;
+
+        // Update slider values
+        document.getElementById('beta-slider').addEventListener('input', (e) => {
+            document.getElementById('beta-value').textContent = e.target.value;
+        });
+
+        document.getElementById('alpha-slider').addEventListener('input', (e) => {
+            document.getElementById('alpha-value').textContent = e.target.value;
+        });
+
+        // Solution 1: DAS
+        async function runDasSimulation() {
+            const beta = parseFloat(document.getElementById('beta-slider').value);
+            
+            document.getElementById('das-loading').classList.add('active');
+            document.getElementById('das-metrics').style.display = 'none';
+            
+            try {
+                const response = await fetch('/simulate/das', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({beta: beta})
+                });
+                
+                const data = await response.json();
+                
+                // Get baseline if beta = 0 or first run
+                if (beta === 0) {
+                    baselineResults = data;
+                }
+                
+                // Update metrics
+                document.getElementById('das-timeout').textContent = data.urllc_timeout_rate.toFixed(2) + '%';
+                document.getElementById('das-delay').textContent = data.avg_urllc_delay.toFixed(2);
+                document.getElementById('das-throughput').textContent = data.avg_throughput.toFixed(2);
+                
+                // Show comparison
+                if (beta > 0 && baselineResults) {
+                    const safeDiv = (numer, denom) => denom === 0 ? 0 : (numer / denom * 100);
+                    const timeoutImprovement = safeDiv(baselineResults.urllc_timeout_rate - data.urllc_timeout_rate, baselineResults.urllc_timeout_rate);
+                    const delayImprovement = safeDiv(baselineResults.avg_urllc_delay - data.avg_urllc_delay, baselineResults.avg_urllc_delay);
+                    
+                    document.getElementById('das-improvement').innerHTML = `
+                        <p>• URLLC Timeout Rate: <span class="improvement">${timeoutImprovement.toFixed(1)}% reduction</span></p>
+                        <p>• URLLC Delay: <span class="improvement">${delayImprovement.toFixed(1)}% reduction</span></p>
+                    `;
+                    document.getElementById('das-comparison').style.display = 'block';
+                }
+                
+                // Update chart
+                if (dasChart) {
+                    dasChart.destroy();
+                }
+                
+                const ctx = document.getElementById('das-chart').getContext('2d');
+                dasChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: Array.from({length: data.throughput_history.length}, (_, i) => i),
+                        datasets: [{
+                            label: 'Throughput Over Time',
+                            data: data.throughput_history,
+                            borderColor: '#667eea',
+                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top'
+                            },
+                            title: {
+                                display: true,
+                                text: `Throughput History (β=${beta})`
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Throughput'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Time Slot'
+                                }
+                            }
+                        }
+                    }
+                });
+                
+                document.getElementById('das-metrics').style.display = 'grid';
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Simulation failed. Please try again.');
+            } finally {
+                document.getElementById('das-loading').classList.remove('active');
+            }
+        }
+
+        // Solution 2: CSI Smoothing
+        async function runCsiSimulation() {
+            const alpha = parseFloat(document.getElementById('alpha-slider').value);
+            
+            document.getElementById('csi-loading').classList.add('active');
+            document.getElementById('csi-metrics').style.display = 'none';
+            
+            try {
+                const response = await fetch('/simulate/csi', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({alpha: alpha})
+                });
+                
+                const data = await response.json();
+                
+                // Update metrics
+                document.getElementById('csi-efficiency').textContent = data.spectral_efficiency.toFixed(2);
+                document.getElementById('csi-retrans').textContent = data.retransmission_rate.toFixed(2) + '%';
+                
+                // Show analysis
+                let analysis = '';
+                if (alpha < 0.15) {
+                    analysis = '<p>• Heavy smoothing provides <span class="improvement">excellent stability</span> but may be slow to adapt to channel changes.</p>';
+                } else if (alpha < 0.3) {
+                    analysis = '<p>• <span class="improvement">Optimal balance</span> between stability and responsiveness. Recommended setting.</p>';
+                } else {
+                    analysis = '<p>• Low smoothing is more responsive but may suffer from noise-induced errors.</p>';
+                }
+                
+                analysis += `<p>• Spectral Efficiency: ${data.spectral_efficiency.toFixed(2)} (higher is better)</p>`;
+                analysis += `<p>• Retransmission Rate: ${data.retransmission_rate.toFixed(2)}% (lower is better)</p>`;
+                
+                document.getElementById('csi-improvement').innerHTML = analysis;
+                document.getElementById('csi-comparison').style.display = 'block';
+                
+                // Update chart
+                if (csiChart) {
+                    csiChart.destroy();
+                }
+                
+                const ctx = document.getElementById('csi-chart').getContext('2d');
+                csiChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: Array.from({length: data.se_history.length}, (_, i) => i),
+                        datasets: [
+                            {
+                                label: 'Spectral Efficiency',
+                                data: data.se_history,
+                                borderColor: '#667eea',
+                                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                                fill: true,
+                                tension: 0.4,
+                                yAxisID: 'y'
+                            },
+                            {
+                                label: 'Retransmission Rate (%)',
+                                data: data.retrans_history,
+                                borderColor: '#f093fb',
+                                backgroundColor: 'rgba(240, 147, 251, 0.1)',
+                                fill: true,
+                                tension: 0.4,
+                                yAxisID: 'y1'
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top'
+                            },
+                            title: {
+                                display: true,
+                                text: `CSI Performance (α=${alpha})`
+                            }
+                        },
+                        scales: {
+                            y: {
+                                type: 'linear',
+                                display: true,
+                                position: 'left',
+                                title: {
+                                    display: true,
+                                    text: 'Spectral Efficiency'
+                                }
+                            },
+                            y1: {
+                                type: 'linear',
+                                display: true,
+                                position: 'right',
+                                title: {
+                                    display: true,
+                                    text: 'Retransmission Rate (%)'
+                                },
+                                grid: {
+                                    drawOnChartArea: false
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Time Slot'
+                                }
+                            }
+                        }
+                    }
+                });
+                
+                document.getElementById('csi-metrics').style.display = 'grid';
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Simulation failed. Please try again.');
+            } finally {
+                document.getElementById('csi-loading').classList.remove('active');
+            }
+        }
+
+        // Solution 3: Fragmentation-Aware Scheduling
+        let fragmentBaseline = null;
+        
+        async function runFragmentationSimulation() {
+            const clustering = document.getElementById('clustering-toggle').checked;
+            
+            document.getElementById('frag-loading').classList.add('active');
+            document.getElementById('frag-metrics').style.display = 'none';
+            
+            try {
+                const response = await fetch('/simulate/fragmentation', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({clustering: clustering})
+                });
+                
+                const data = await response.json();
+                
+                // Store baseline (without clustering)
+                if (!clustering || !fragmentBaseline) {
+                    if (!clustering) {
+                        fragmentBaseline = data;
+                    }
+                }
+                
+                // Update metrics
+                document.getElementById('frag-util').textContent = data.spectrum_utilization.toFixed(2) + '%';
+                document.getElementById('frag-throughput').textContent = data.avg_throughput.toFixed(2);
+                document.getElementById('frag-compliance').textContent = data.urllc_compliance.toFixed(2) + '%';
+                
+                // Show comparison
+                if (clustering && fragmentBaseline) {
+                    const utilImprovement = ((data.spectrum_utilization - fragmentBaseline.spectrum_utilization) / fragmentBaseline.spectrum_utilization * 100);
+                    const throughputImprovement = ((data.avg_throughput - fragmentBaseline.avg_throughput) / fragmentBaseline.avg_throughput * 100);
+                    
+                    document.getElementById('frag-improvement').innerHTML = `
+                        <p>• Spectrum Utilization: <span class="improvement">+${utilImprovement.toFixed(1)}% improvement</span></p>
+                        <p>• Throughput: <span class="improvement">+${throughputImprovement.toFixed(1)}% improvement</span></p>
+                        <p>• URLLC Compliance: <span class="improvement">${data.urllc_compliance.toFixed(1)}%</span></p>
+                    `;
+                    document.getElementById('frag-comparison').style.display = 'block';
+                } else if (!clustering) {
+                    document.getElementById('frag-improvement').innerHTML = `
+                        <p>Baseline mode: Traditional per-fragment allocation. Enable clustering to see improvements!</p>
+                    `;
+                    document.getElementById('frag-comparison').style.display = 'block';
+                }
+                
+                // Update chart
+                if (fragChart) {
+                    fragChart.destroy();
+                }
+                
+                const ctx = document.getElementById('frag-chart').getContext('2d');
+                fragChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: Array.from({length: data.util_history.length}, (_, i) => i),
+                        datasets: [
+                            {
+                                label: 'Spectrum Utilization (%)',
+                                data: data.util_history,
+                                borderColor: '#667eea',
+                                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                                fill: true,
+                                tension: 0.4,
+                                yAxisID: 'y'
+                            },
+                            {
+                                label: 'Throughput',
+                                data: data.throughput_history,
+                                borderColor: '#f093fb',
+                                backgroundColor: 'rgba(240, 147, 251, 0.1)',
+                                fill: true,
+                                tension: 0.4,
+                                yAxisID: 'y1'
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top'
+                            },
+                            title: {
+                                display: true,
+                                text: `Fragmentation-Aware Performance (Clustering: ${clustering ? 'ON' : 'OFF'})`
+                            }
+                        },
+                        scales: {
+                            y: {
+                                type: 'linear',
+                                display: true,
+                                position: 'left',
+                                title: {
+                                    display: true,
+                                    text: 'Utilization (%)'
+                                }
+                            },
+                            y1: {
+                                type: 'linear',
+                                display: true,
+                                position: 'right',
+                                title: {
+                                    display: true,
+                                    text: 'Throughput'
+                                },
+                                grid: {
+                                    drawOnChartArea: false
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Time Slot'
+                                }
+                            }
+                        }
+                    }
+                });
+                
+                document.getElementById('frag-metrics').style.display = 'grid';
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Simulation failed. Please try again.');
+            } finally {
+                document.getElementById('frag-loading').classList.remove('active');
+            }
+        }
+
+        // Run initial simulations on page load
+        window.addEventListener('load', () => {
+            runDasSimulation();
+        });
+    </script>
+</body>
+</html>
